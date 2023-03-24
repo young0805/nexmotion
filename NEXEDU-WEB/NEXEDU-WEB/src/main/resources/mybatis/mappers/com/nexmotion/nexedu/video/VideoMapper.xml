@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="com.nexmotion.nexedu.video.VideoMapper">
+	
+	<resultMap type="com.nexmotion.nexedu.video.Video" id="VideoResultMap"/>	          
+        
+    <!-- 유사도에 대한 상태에 따른 동영상 강좌의 리스트를 가져온다. -->
+    <select id="getVideoList" parameterType="map" resultMap="VideoResultMap">
+	SELECT a.seqno /* 일련번호 */
+          ,b.username /* 교수명 */
+          ,a.userid /* 사용자 아이디 */
+          ,a.subjectno /* 강좌번호 */
+          ,a.subject /* 강좌명 */
+          ,a.regdate /* 동영상 데이터 수신일시 */
+          ,a.createdate /* 동영상 생성일자 */
+          ,a.processdate /* 처리시간 */
+          ,a.filepathmov /* 음성인식 후 텍스트 파일 위치 */
+          ,a.statusprocess /* 동영상 처리에 대한 상태 정보 */
+          ,a.statussimilarity /* 유사도에 대한 상태 */
+          ,a.memo /* 신고사유 */
+          ,a.reporteruserid /* 신고자 아이디 */
+          ,a.reporterdate /* 신고일시 */
+          ,a.major /* 학과명 */
+          ,a.plagrate /* 유사도 */
+          ,a.week /* 주차정보 */
+     FROM video a
+         ,user b
+    WHERE a.userid = b.userid
+      AND a.statussimilarity = #{statussimilarity}
+    <if test="seqno > 0">
+    <![CDATA[
+      AND a.seqno < #{seqno}
+    ]]>
+    </if>
+ ORDER BY a.seqno DESC
+    LIMIT #{scrnum}    
+    </select>
+
+</mapper>

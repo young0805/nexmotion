@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nexmotion.camf.CamfMapper">
+  <resultMap type="map" id="camfMessage">
+    <result column="campus_userid" property="userid" javaType="java.lang.String"/>
+    <result column="senderid" property="senderid" javaType="java.lang.String"/>
+    <result column="name" property="name" javaType="java.lang.String"/>
+    <result column="server_message_id" property="serverMsgId" javaType="java.lang.String"/>
+    <result column="sendtime" property="sendTime" javaType="java.lang.String"/>
+    <result column="jsonfulltext" property="json" javaType="java.lang.String"/>
+    <result column="like_count" property="likeCount" javaType="java.lang.String"/>
+    <result column="dislike_count" property="dislikeCount" javaType="java.lang.String"/>
+    <association column="camfUserId=campus_userid,senderid=senderid,serverMsgId=server_message_id" property="read" javaType="int" select="msgReadCount"/>
+    <association column="camfUserId=campus_userid,senderid=senderid,serverMsgId=server_message_id" property="sent" javaType="int" select="msgSentCount"/>
+    <association column="camfUserId=campus_userid,senderid=senderid,serverMsgId=server_message_id" property="resend" javaType="int" select="msgResendCount"/>
+  </resultMap>
+  
+  <resultMap type="map" id="camf">
+    <result column="userid" property="userid" javaType="java.lang.String"/>
+    <result column="name" property="name" javaType="java.lang.String"/>
+    <result column="write_type" property="writeType" javaType="java.lang.String"/>
+    <result column="receiver_type" property="receiverType" javaType="java.lang.String"/>
+    <result column="mode" property="sendType" javaType="java.lang.String"/>
+    <result column="view_table_name" property="viewTableName" javaType="java.lang.String"/>
+    <result column="feeling_yn" property="likeDislikeYn" javaType="java.lang.String"/>
+    <result column="reply_yn" property="replyYn" javaType="java.lang.String"/>
+    <association column="userid" property="rssUrl" select="getCamfRssUrl" javaType="map"/>
+  </resultMap>
+  
+  <resultMap type="map" id="rss">
+    <id column="id" property="id" javaType="int"/>
+    <result column="url" property="url" javaType="java.lang.String"/>
+    <collection column="id" property="schedule" select="getRssSendDate" ofType="map">
+      <result column="day" property="sendDay" javaType="java.lang.String"/>
+      <result column="time" property="time" javaType="java.lang.String"/>
+    </collection>
+  </resultMap>
+  
+  <insert id="insertCamf" parameterType="map">
+    INSERT
+      INTO  campus_friend
+           (name
+           ,write_type
+           ,mode
+           ,receiver_type
+           ,view_table_name
+           ,feeling_yn
+           ,reply_yn
+           ,updatetime
+           ,camftype
+           ,camfdvs
+           ,userid)
+     VALUE (#{name}
+           ,#{writeType}
+           ,#{sendType}
+           ,#{receiverType}
+           ,#{viewTableName}
+           ,#{likeDislikeYn}
+           ,#{replyYn}
+           ,now()
+           ,'001'
+           ,'01'
+           ,#{userid})
+  </insert>
+  
+  <insert id="insertCamfRss" parameterType="map" useGeneratedKeys="true" keyProperty="id">
+    INSERT
+      INTO  campus_friend_rss
+           (campus_friend_userid
+           ,url)
+     VALUE (#{camfId}
+           ,#{url})
+  </insert>
+  
+  <insert id="insertCamfRssSenddate" parameterType="map">
+    INSERT
+      INTO  campus_friend_rss_senddate
+           (campus_friend_rss_id
+           ,day
+           ,time)
+     VALUES 
+     <foreach item="item" collection="list" separator=",">
+           (#{camfRssId}
+           ,#{item.day}
+           ,#{item.time})
+     </foreach>
+  </insert>
+  
+  <select id="getCamfList" resultType="map" parameterType="map">
+    SELECT  userid AS id
+           ,name
+           ,mode
+           ,feeling_yn
+           ,reply_yn
+      FROM  campus_friend
+     WHERE  1=1
+     <if test="mode != null and mode != ''">
+       AND  mode = #{mode}
+     </if>
+     <if test="name != null and name != ''">
+       AND  name LIKE CONCAT('%', #{name}, '%')
+     </if>
+     <if test="offSet != null and rowCount != null">
+     LIMIT  #{offSet}, #{rowCount}
+     </if>
+  </select>
+  
+  <select id="getMyCamfList" resultType="map" parameterType="map">
+    SELECT  camf.userid AS id
+           ,camf.name
+           ,camf.mode
+           ,camf.feeling_yn
+           ,camf.reply_yn
+      FROM  campus_friend camf
+           ,camf_auth_sender_info auth
+     WHERE  auth.sender_camf_id = camf.userid
+       AND  auth.user_userid = #{userid}
+  </select>
+  
+  <select id="getCamfName" resultType="java.lang.String">
+    SELECT name
+      FROM campus_friend
+     WHERE userid = #{id}
+  </select>
+  
+  <select id="getCamfCount" resultType="int" parameterType="map">
+    SELECT COUNT(*)
+      FROM campus_friend
+     WHERE  1=1
+     <if test="mode != null and mode != ''">
+       AND  mode = #{mode}
+     </if>
+     <if test="name != null and name != ''">
+       AND  name LIKE CONCAT('%', #{name}, '%')
+     </if>
+  </select>
+  
+  <select id="getCamfInfo" resultMap="camf">
+    SELECT  userid
+           ,name
+           ,write_type
+           ,receiver_type
+           ,mode
+           ,view_table_name
+           ,feeling_yn
+           ,reply_yn
+      FROM  campus_friend
+     WHERE  userid = #{userid}
+  </select>
+  
+  <select id="getCamfRssUrl" parameterType="map" resultMap="rss">
+    SELECT  url
+           ,id
+      FROM  campus_friend_rss
+     WHERE  campus_friend_userid = #{userid}
+  </select>
+  
+  <select id="getRssSendDate" parameterType="map" resultType="map">
+    SELECT  day
+           ,TIME_FORMAT(time, '%H:%i') AS time
+      FROM  campus_friend_rss_senddate
+     WHERE  campus_friend_rss_id = #{id}
+  </select>
+  
+  <update id="updateCamf" parameterType="map">
+    UPDATE  campus_friend
+       SET  write_type = #{writeType}
+           ,receiver_type = #{receiverType}
+           ,view_table_name = #{viewTableName}
+           ,feeling_yn = #{likeDislikeYn}
+           ,reply_yn = #{replyYn}
+           ,updatetime = now()
+     WHERE  userid = #{userid}
+  </update>
+  
+  <delete id="deleteRssSendDate" parameterType="map">
+    DELETE
+      FROM campus_friend_rss_senddate
+     WHERE campus_friend_rss_id = #{id}
+  </delete>
+  
+  <delete id="deleteRssUrl" parameterType="map">
+    DELETE
+      FROM campus_friend_rss
+     WHERE campus_friend_userid = #{userid}
+  </delete>
+</mapper>

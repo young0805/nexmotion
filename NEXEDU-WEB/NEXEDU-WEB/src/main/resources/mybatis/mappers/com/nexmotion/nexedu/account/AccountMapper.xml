@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="com.nexmotion.nexedu.account.AccountMapper">
+	
+	<resultMap type="com.nexmotion.nexedu.account.Account" id="AccountResultMap">
+	  <id column="userid" property="userid" javaType="java.lang.String"/>
+	  <result column="password" property="password" javaType="java.lang.String"/>
+	  <result column="authority" property="authority" javaType="java.lang.String"/>	  
+	  <result column="isaccountnonexpired" property="isAccountNonExpired" javaType="java.lang.Boolean"/>
+	  <result column="isaccountnonlocked" property="isAccountNonLocked" javaType="java.lang.Boolean"/>
+	  <result column="iscredentialsnonexpired" property="isCredentialsNonExpired" javaType="java.lang.Boolean"/>
+	  <result column="isenabled" property="isEnabled" javaType="java.lang.Boolean"/>
+	</resultMap>        
+        
+    <!-- 관리자 정보를 가져온다 -->
+    <select id="getAccount" parameterType="map" resultMap="AccountResultMap">
+    	SELECT userid
+    	      ,password
+    	      ,authority
+    	      ,isaccountnonexpired
+    	      ,isaccountnonlocked
+    	      ,iscredentialsnonexpired
+    	      ,isenabled
+    	  FROM account
+         WHERE userid = #{userid} 
+    </select>
+
+</mapper>
